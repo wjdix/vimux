@@ -77,6 +77,14 @@ function RunLastVimTmuxCommand()
   call VimuxRunLastCommand()
 endfunction
 
+function VimuxWindowPaneUp()
+  ruby CurrentTmuxSession.new.grow_runner_pane
+endfunction
+
+function VimuxWindowPaneDown()
+  ruby CurrentTmuxSession.new.shrink_runner_pane
+endfunction
+
 
 function VimuxClearWindow()
   if exists("g:_VimTmuxRunnerPane")
@@ -277,6 +285,24 @@ class TmuxSession
     pane = panes.find { |p| p !~ /active/ }
     pane ? pane.split(':').first : nil
   end
+
+  def grow_runner_pane
+    adjustment = (0.60 * _current_window_height).to_i
+    puts "hey: #{adjustment}"
+    _run "resize-pane -U -t #{target(:pane => runner_pane)} #{adjustment}"
+  end
+
+  def shrink_runner_pane
+    adjustment = (0.60 * _current_window_height).to_i
+    puts "hey: #{adjustment}"
+    _run "resize-pane -D -t #{target(:pane => runner_pane)} #{adjustment}"
+  end
+
+  def _current_window_height
+    result = _run("list-windows")
+    result.split(' ')[2].split('x')[1].to_f
+  end
+
 
   def _move_up_pane
     _run("select-pane -t #{target}")
