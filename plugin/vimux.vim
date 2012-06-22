@@ -17,6 +17,7 @@ command VimuxInspectRunner :call VimuxInspectRunner()
 command VimuxInterruptRunner :call VimuxInterruptRunner()
 command VimuxPromptCommand :call VimuxPromptCommand()
 command VimuxClearRunnerHistory :call VimuxClearRunnerHistory()
+command VimuxToggleWindowPane :call VimuxToggleWindowPane()
 
 " DEPRECATED
 command RunLastVimTmuxCommand :call VimuxRunLastCommand()
@@ -77,14 +78,15 @@ function RunLastVimTmuxCommand()
   call VimuxRunLastCommand()
 endfunction
 
-function VimuxWindowPaneUp()
-  ruby CurrentTmuxSession.new.grow_runner_pane
+function VimuxToggleWindowPane()
+  if exists("g:_VimTmuxWindowPaneUp")
+    ruby CurrentTmuxSession.new.shrink_runner_pane
+    unlet g:_VimTmuxWindowPaneUp
+  else
+    ruby CurrentTmuxSession.new.grow_runner_pane
+    let g:_VimTmuxWindowPaneUp = 1
+  endif
 endfunction
-
-function VimuxWindowPaneDown()
-  ruby CurrentTmuxSession.new.shrink_runner_pane
-endfunction
-
 
 function VimuxClearWindow()
   if exists("g:_VimTmuxRunnerPane")
@@ -288,13 +290,11 @@ class TmuxSession
 
   def grow_runner_pane
     adjustment = (0.60 * _current_window_height).to_i
-    puts "hey: #{adjustment}"
     _run "resize-pane -U -t #{target(:pane => runner_pane)} #{adjustment}"
   end
 
   def shrink_runner_pane
     adjustment = (0.60 * _current_window_height).to_i
-    puts "hey: #{adjustment}"
     _run "resize-pane -D -t #{target(:pane => runner_pane)} #{adjustment}"
   end
 
@@ -302,7 +302,6 @@ class TmuxSession
     result = _run("list-windows")
     result.split(' ')[2].split('x')[1].to_f
   end
-
 
   def _move_up_pane
     _run("select-pane -t #{target}")
